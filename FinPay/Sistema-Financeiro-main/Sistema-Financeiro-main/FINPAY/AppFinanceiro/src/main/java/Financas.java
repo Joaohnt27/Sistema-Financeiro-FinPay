@@ -17,12 +17,24 @@ public class Financas {
         return descricao;
     }
 
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
+
     public double getValor() {
         return valor;
     }
 
+    public void setValor(double valor) {
+        this.valor = valor;
+    }
+
     public Categoria getCategoria() {
         return categoria;
+    }
+
+    public void setCategoria(Categoria categoria) {
+        this.categoria = categoria;
     }
 
     public Date getData() {
