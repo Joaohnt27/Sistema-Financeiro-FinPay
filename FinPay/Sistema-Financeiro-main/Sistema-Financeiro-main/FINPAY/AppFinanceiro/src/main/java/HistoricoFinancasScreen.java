@@ -15,13 +15,13 @@ public class HistoricoFinancasScreen extends JFrame {
     private JComboBox<String> comboTipo;
     private CategoriaManager categoriaManager;
     private List<Financas> financasList;
-    private DefaultListModel<String> listModel;  // Declaração correta do DefaultListModel
+    private DefaultListModel<String> listModel; 
     private JList<String> lista;
 
     public HistoricoFinancasScreen(List<Financas> financasList, CategoriaManager categoriaManager) {
         this.categoriaManager = categoriaManager;
         this.financasList = financasList;  // Associa a lista de finanças
-        this.listModel = new DefaultListModel<>();  // Inicializa corretamente o DefaultListModel
+        this.listModel = new DefaultListModel<>();  
 
         setTitle("Histórico de Finanças");
         setSize(800, 600);
