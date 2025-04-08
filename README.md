@@ -1,8 +1,8 @@
 # Trabalho-Bruno
 
 - Arthur Vital Fontana - 839832
-- Joao Henrique Nazar Tavares - 839463
-- Rafael Mele Porto -840897
+- João Henrique Nazar Tavares - 839463
+- Rafael Mele Porto - 840897
 
 ![Image](https://github.com/user-attachments/assets/e6a75217-37d3-4f77-8f03-ae14c29a625f)
 
