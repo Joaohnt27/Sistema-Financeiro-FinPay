@@ -1,7 +1,11 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Date;
+import javax.swing.ListCellRenderer;
 import java.util.stream.Collectors;
 
 public class HistoricoFinancasScreen extends JFrame {
@@ -10,9 +14,14 @@ public class HistoricoFinancasScreen extends JFrame {
     private JComboBox<String> comboCategoria;
     private JComboBox<String> comboTipo;
     private CategoriaManager categoriaManager;
+    private List<Financas> financasList;
+    private DefaultListModel<String> listModel;  // Declaração correta do DefaultListModel
+    private JList<String> lista;
 
     public HistoricoFinancasScreen(List<Financas> financasList, CategoriaManager categoriaManager) {
         this.categoriaManager = categoriaManager;
+        this.financasList = financasList;  // Associa a lista de finanças
+        this.listModel = new DefaultListModel<>();  // Inicializa corretamente o DefaultListModel
 
         setTitle("Histórico de Finanças");
         setSize(800, 600);
@@ -56,24 +65,52 @@ public class HistoricoFinancasScreen extends JFrame {
 
         add(painelFiltro, BorderLayout.NORTH);
 
-        // Model de lista para exibir as finanças filtradas
-        DefaultListModel<String> listModel = new DefaultListModel<>();
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-
         // Preencher a lista com as finanças iniciais
-        for (Financas f : financasList) {
-            String linha = String.format("Data: %s | Valor: R$ %.2f | Categoria: %s | Descrição: %s",
-                    sdf.format(f.getData()),
-                    f.getValor(),
-                    f.getCategoria().getNome(),
-                    f.getDescricao());
-            listModel.addElement(linha);
-        }
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        atualizarLista();
 
         // Criando JList para exibir as finanças
-        JList<String> lista = new JList<>(listModel);
+        lista = new JList<>(listModel);
+        lista.setCellRenderer(new FinancaRenderer());
         JScrollPane scrollPane = new JScrollPane(lista);
         add(scrollPane, BorderLayout.CENTER);
+
+        // Criando um menu Popup
+        JPopupMenu menuPopup = new JPopupMenu();
+        JMenuItem itemEditar = new JMenuItem("Editar");
+        JMenuItem itemExcluir = new JMenuItem("Remover");
+
+        menuPopup.add(itemEditar);
+        menuPopup.add(itemExcluir);
+
+        lista.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) { // Clique do botão direito
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    int index = lista.locationToIndex(e.getPoint());
+                    if (index >= 0) {
+                        lista.setSelectedIndex(index);
+                        menuPopup.show(lista, e.getX(), e.getY());
+                    }
+                }
+            }
+        });
+
+        // Ação no botão "Editar"
+        itemEditar.addActionListener(e -> {
+            int index = lista.getSelectedIndex();
+            if (index >= 0) {
+                editarCategoria(index);
+            }
+        });
+
+        // Ação no botão "Remover"
+        itemExcluir.addActionListener(e -> {
+            int index = lista.getSelectedIndex();
+            if (index >= 0) {
+                excluirCategoria(index);
+            }
+        });
 
         // Função do botão de "Filtrar"
         btnFiltrar.addActionListener(e -> {
@@ -140,6 +177,75 @@ public class HistoricoFinancasScreen extends JFrame {
         });
     }
 
+    // Função de editar do Popup
+    private void editarCategoria(int index) {
+        Financas selecionada = financasList.get(index);
+
+        // Painel para inserir os novos dados
+        JPanel painel = new JPanel(new GridLayout(4, 2, 5, 5));
+
+        JTextField txtDescricao = new JTextField(selecionada.getDescricao());
+        JTextField txtValor = new JTextField(String.valueOf(selecionada.getValor()));
+        JTextField txtCategoria = new JTextField(selecionada.getCategoria().getNome());
+        JTextField txtData = new JTextField(new SimpleDateFormat("dd/MM/yyyy").format(selecionada.getData()));
+
+        painel.add(new JLabel("Descrição:"));
+        painel.add(txtDescricao);
+        painel.add(new JLabel("Valor:"));
+        painel.add(txtValor);
+        painel.add(new JLabel("Categoria:"));
+        painel.add(txtCategoria);
+        painel.add(new JLabel("Data:"));
+        painel.add(txtData);
+
+        int resultado = JOptionPane.showConfirmDialog(
+                this, painel, "Editar Finança", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (resultado == JOptionPane.OK_OPTION) {
+            try {
+                String novaDescricao = txtDescricao.getText().trim();
+                double novoValor = Double.parseDouble(txtValor.getText().replace(",", "."));
+                String novaCategoria = txtCategoria.getText().trim();
+                Date novaData = new SimpleDateFormat("dd/MM/yyyy").parse(txtData.getText().trim());
+
+                selecionada.setDescricao(novaDescricao);
+                selecionada.setData(novaData);
+                selecionada.setValor(novoValor);
+                selecionada.getCategoria().setNome(novaCategoria);
+
+                financasList.set(index, selecionada);
+                atualizarLista();
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Erro ao atualizar: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    // Função de remover do Popup
+    private void excluirCategoria(int index) {
+        int confirmacao = JOptionPane.showConfirmDialog(this, "Tem certeza que deseja remover esta transação?", "Confirmar Remoção", JOptionPane.YES_NO_OPTION);
+        if (confirmacao == JOptionPane.YES_OPTION) {
+            financasList.remove(index);
+            listModel.remove(index);
+            atualizarLista();
+        }
+    }
+
+    // Atualizar a lista do histórico após edição ou remoção
+    private void atualizarLista() {
+        listModel.clear();
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+
+        for (Financas f : financasList) {
+            String linha = String.format("Data: %s | Valor: R$ %.2f | Categoria: %s | Descrição: %s",
+                    sdf.format(f.getData()),
+                    f.getValor(),
+                    f.getCategoria().getNome(),
+                    f.getDescricao());
+            listModel.addElement(linha);
+        }
+    }
+
     // Função para exibir o total das receitas e despesas no período
     private void exibirTotais(List<Financas> listaFiltrada) {
         double totalReceitas = 0;
@@ -162,5 +268,22 @@ public class HistoricoFinancasScreen extends JFrame {
                         (totalReceitas + totalDespesas >= 0 ? "Saldo Positivo! =D" : "Saldo Negativo! :("),
                 totalReceitas, totalDespesas, totalReceitas + totalDespesas);
         JOptionPane.showMessageDialog(this, mensagem, "Totais no Período", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    // Renderer para a cor do histórico ser igual a cor da categoria
+    private class FinancaRenderer extends DefaultListCellRenderer implements ListCellRenderer<Object> {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            Financas f = financasList.get(index);
+
+            if (!isSelected) {
+                Color corCategoria = f.getCategoria().getColor();
+                label.setBackground(corCategoria);
+                label.setOpaque(true);
+            }
+
+            return label;
+        }
     }
 }
