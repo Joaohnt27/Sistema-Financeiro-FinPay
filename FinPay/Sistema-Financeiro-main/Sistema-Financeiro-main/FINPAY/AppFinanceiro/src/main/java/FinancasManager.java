@@ -15,4 +15,12 @@ public class FinancasManager {
     public List<Financas> listarFinancas() {
         return usuario.getFinancas();
     }
+
+    public void excluirFinanca(int index) {
+        usuario.getFinancas().remove(index);
+    }
+
+    public void editarFinanca(int index, Financas editado) {
+        usuario.getFinancas().set(index, editado);
+    }
 }
